@@ -1,0 +1,23 @@
+name: CAbilityStones
+version: 1.0.0
+main: carnage.cAbilityStones.CAbilityStones
+api-version: '1.21'
+author: Carnage
+description: Ability stones that grant players temporary powers
+
+commands:
+  stone:
+    description: Main command for ability stones
+    usage: /stone <give|reload> [args]
+    permission: abilitystones.use
+
+permissions:
+  abilitystones.use:
+    description: Basic permission to use the plugin
+    default: true
+  abilitystones.give:
+    description: Permission to give stones
+    default: op
+  abilitystones.reload:
+    description: Permission to reload config
+    default: op

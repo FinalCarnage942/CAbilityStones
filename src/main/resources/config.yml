@@ -1,0 +1,72 @@
+stones:
+  fire:
+    material: RED_DYE
+    name: '&c&lFire Stone'
+    ability_name: 'Fire Burst'
+    lore:
+      - '&7Ability: &eFire Burst'
+      - '&7Shoot a fireball that explodes'
+      - '&7on impact'
+      - ''
+      - '&eCooldown: 10s'
+    cooldown: 10
+
+  water:
+    material: LIGHT_BLUE_DYE
+    name: '&b&lWater Stone'
+    ability_name: 'Heal Wave'
+    lore:
+      - '&7Ability: &eHeal Wave'
+      - '&7Heal yourself and nearby allies'
+      - '&7and apply Regen II for 5s'
+      - ''
+      - '&eCooldown: 12s'
+    cooldown: 12
+
+  earth:
+    material: LIME_DYE
+    name: '&a&lEarth Stone'
+    ability_name: 'Stone Shield'
+    lore:
+      - '&7Ability: &eStone Shield'
+      - '&7Gain Resistance III for 5s'
+      - '&7and knockback nearby enemies'
+      - ''
+      - '&eCooldown: 15s'
+    cooldown: 15
+
+  air:
+    material: WHITE_DYE
+    name: '&f&lAir Stone'
+    ability_name: 'Dash Forward'
+    lore:
+      - '&7Ability: &eDash Forward'
+      - '&7Quickly dash forward 5-7 blocks'
+      - '&7with Speed II and particles'
+      - ''
+      - '&eCooldown: 8s'
+    cooldown: 8
+
+  lightning:
+    material: YELLOW_DYE
+    name: '&e&lLightning Stone'
+    ability_name: 'Chain Lightning'
+    lore:
+      - '&7Ability: &eChain Lightning'
+      - '&7Strike 3 nearest enemies within'
+      - '&76 blocks with lightning'
+      - ''
+      - '&eCooldown: 12s'
+    cooldown: 12
+
+  darkness:
+    material: PURPLE_DYE
+    name: '&5&lDarkness Stone'
+    ability_name: 'Shadow Curse'
+    lore:
+      - '&7Ability: &eShadow Curse'
+      - '&7Apply Blindness II and Slowness II'
+      - '&7to nearby enemies for 3s'
+      - ''
+      - '&eCooldown: 15s'
+    cooldown: 15
