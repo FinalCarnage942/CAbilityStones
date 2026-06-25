@@ -8,12 +8,8 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-/**
- * Implements the Dash Forward ability, propelling the player forward with speed and particle effects.
- */
 public class DashForwardAbility implements Ability {
     private static final double DASH_MULTIPLIER = 2.0;
     private static final double Y_OFFSET = 0.3;
@@ -33,76 +29,42 @@ public class DashForwardAbility implements Ability {
         applyDash(player);
         applySpeedEffect(player);
         startParticleEffect(player);
-        sendMessage(player, Component.text("Dash Forward activated!", NamedTextColor.WHITE));
+        player.sendMessage(Component.text("Dash Forward activated!", NamedTextColor.WHITE));
         return true;
     }
 
-    /**
-     * Applies the dash movement to the player.
-     *
-     * @param player the player to dash
-     */
     private void applyDash(Player player) {
         Vector direction = player.getLocation().getDirection().normalize();
         direction.setY(Y_OFFSET);
         player.setVelocity(direction.multiply(DASH_MULTIPLIER));
     }
 
-    /**
-     * Applies a speed potion effect to the player.
-     *
-     * @param player the player to receive the effect
-     */
     private void applySpeedEffect(Player player) {
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, SPEED_DURATION, SPEED_AMPLIFIER));
     }
 
-    /**
-     * Starts the particle effect for the dash ability.
-     *
-     * @param player the player to show particles for
-     */
     private void startParticleEffect(Player player) {
-        new BukkitRunnable() {
-            int ticks = 0;
-            double angle = 0;
+        double[] angle = {0};
+        int[] ticks = {0};
 
-            @Override
-            public void run() {
-                if (ticks >= PARTICLE_TICKS) {
-                    cancel();
-                    return;
-                }
-
-                Location loc = player.getLocation().clone().add(0, 1, 0);
-                spawnDashParticles(loc, angle);
-                angle += 30;
-                ticks++;
+        plugin.getServer().getScheduler().runTaskTimer(plugin, task -> {
+            if (ticks[0] >= PARTICLE_TICKS) {
+                task.cancel();
+                return;
             }
 
-            private void spawnDashParticles(Location loc, double angle) {
-                for (int i = 0; i < 3; i++) {
-                    double offsetAngle = angle + (i * 120);
-                    double radians = Math.toRadians(offsetAngle);
-                    double x = Math.cos(radians) * 0.8;
-                    double z = Math.sin(radians) * 0.8;
-
-                    Location slashLoc = loc.clone().add(x, 0, z);
-                    player.getWorld().spawnParticle(Particle.SWEEP_ATTACK, slashLoc, 1, 0, 0, 0, 0);
-                    player.getWorld().spawnParticle(Particle.CRIT, slashLoc, 2, 0.1, 0.1, 0.1, 0);
-                }
+            Location loc = player.getLocation().clone().add(0, 1, 0);
+            for (int i = 0; i < 3; i++) {
+                double offsetAngle = angle[0] + (i * 120);
+                double rad = Math.toRadians(offsetAngle);
+                Location slashLoc = loc.clone().add(Math.cos(rad) * 0.8, 0, Math.sin(rad) * 0.8);
+                player.getWorld().spawnParticle(Particle.SWEEP_ATTACK, slashLoc, 1, 0, 0, 0, 0);
+                player.getWorld().spawnParticle(Particle.CRIT, slashLoc, 2, 0.1, 0.1, 0.1, 0);
             }
-        }.runTaskTimer(plugin, 0, 1);
-    }
 
-    /**
-     * Sends a message to the player.
-     *
-     * @param player the player to receive the message
-     * @param message the message to send
-     */
-    private void sendMessage(Player player, Component message) {
-        player.sendMessage(message);
+            angle[0] += 30;
+            ticks[0]++;
+        }, 0, 1);
     }
 
     @Override

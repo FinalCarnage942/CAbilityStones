@@ -3,9 +3,6 @@ package carnage.cAbilityStones.models;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Enum representing the types of ability stones with their default names and lore.
- */
 public enum StoneType {
     FIRE(
             "&c&lFire Stone",
@@ -40,20 +37,10 @@ public enum StoneType {
         this.defaultLore = defaultLore;
     }
 
-    /**
-     * Gets the default display name of the stone.
-     *
-     * @return the default name
-     */
     public String getDefaultName() {
         return defaultName;
     }
 
-    /**
-     * Gets the default lore of the stone.
-     *
-     * @return the default lore
-     */
     public List<String> getDefaultLore() {
         return defaultLore;
     }

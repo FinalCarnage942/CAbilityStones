@@ -10,12 +10,8 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-/**
- * Implements the Fire Burst ability, launching a fireball with orbiting blocks that explodes on impact.
- */
 public class FireBurstAbility implements Ability {
     private static final float EXPLOSION_POWER = 3.0f;
     private static final double MOVE_SPEED = 0.5;
@@ -36,16 +32,10 @@ public class FireBurstAbility implements Ability {
         ArmorStand[] orbitingBlocks = createOrbitingBlocks(startLoc);
 
         startFireballMovement(player, core, orbitingBlocks, startLoc, direction);
-        sendMessage(player, Component.text("Fire Burst activated!", NamedTextColor.RED));
+        player.sendMessage(Component.text("Fire Burst activated!", NamedTextColor.RED));
         return true;
     }
 
-    /**
-     * Creates the core armor stand for the fireball.
-     *
-     * @param startLoc the starting location
-     * @return the core armor stand
-     */
     private ArmorStand createCore(Location startLoc) {
         ArmorStand core = (ArmorStand) startLoc.getWorld().spawnEntity(startLoc, EntityType.ARMOR_STAND);
         core.setVisible(false);
@@ -56,12 +46,6 @@ public class FireBurstAbility implements Ability {
         return core;
     }
 
-    /**
-     * Creates orbiting armor stands with different block types.
-     *
-     * @param startLoc the starting location
-     * @return array of orbiting armor stands
-     */
     private ArmorStand[] createOrbitingBlocks(Location startLoc) {
         Material[] blocks = {Material.NETHERRACK, Material.BLACKSTONE, Material.COAL_BLOCK};
         ArmorStand[] orbitingBlocks = new ArmorStand[3];
@@ -77,74 +61,36 @@ public class FireBurstAbility implements Ability {
         return orbitingBlocks;
     }
 
-    /**
-     * Starts the fireball movement and particle effects.
-     *
-     * @param player the player activating the ability
-     * @param core the core armor stand
-     * @param orbitingBlocks the orbiting armor stands
-     * @param startLoc the starting location
-     * @param direction the movement direction
-     */
     private void startFireballMovement(Player player, ArmorStand core, ArmorStand[] orbitingBlocks, Location startLoc, Vector direction) {
-        new BukkitRunnable() {
-            int ticks = 0;
-            double angle = 0;
-            Location currentLoc = startLoc.clone();
+        Location currentLoc = startLoc.clone();
+        Vector moveDir = direction.clone().multiply(MOVE_SPEED);
+        int[] counter = {0};
 
-            @Override
-            public void run() {
-                if (ticks >= MAX_TICKS || currentLoc.getBlock().getType().isSolid()) {
-                    createExplosion(currentLoc);
-                    core.remove();
-                    for (ArmorStand block : orbitingBlocks) {
-                        block.remove();
-                    }
-                    cancel();
-                    return;
-                }
-
-                updateFireballPosition(currentLoc, direction, core, orbitingBlocks, angle);
-                spawnFireballParticles(currentLoc);
-                angle += 20;
-                ticks++;
+        plugin.getServer().getScheduler().runTaskTimer(plugin, task -> {
+            if (counter[0] >= MAX_TICKS || currentLoc.getBlock().getType().isSolid()) {
+                currentLoc.getWorld().createExplosion(currentLoc, EXPLOSION_POWER, false, false);
+                currentLoc.getWorld().spawnParticle(Particle.EXPLOSION, currentLoc, 5, 0.5, 0.5, 0.5);
+                currentLoc.getWorld().spawnParticle(Particle.FLAME, currentLoc, 50, 1, 1, 1, 0.1);
+                core.remove();
+                for (ArmorStand block : orbitingBlocks) block.remove();
+                task.cancel();
+                return;
             }
 
-            private void createExplosion(Location loc) {
-                loc.getWorld().createExplosion(loc, EXPLOSION_POWER, false, false);
-                loc.getWorld().spawnParticle(Particle.EXPLOSION, loc, 5, 0.5, 0.5, 0.5);
-                loc.getWorld().spawnParticle(Particle.FLAME, loc, 50, 1, 1, 1, 0.1);
+            currentLoc.add(moveDir.clone());
+            core.teleport(currentLoc);
+
+            double angle = counter[0] * 20.0;
+            for (int i = 0; i < 3; i++) {
+                double a = Math.toRadians(angle + (i * 120));
+                orbitingBlocks[i].teleport(currentLoc.clone().add(Math.cos(a) * 0.6, -1.5, Math.sin(a) * 0.6));
             }
 
-            private void updateFireballPosition(Location loc, Vector direction, ArmorStand core, ArmorStand[] orbitingBlocks, double angle) {
-                loc.add(direction.clone().multiply(MOVE_SPEED));
-                core.teleport(loc);
-                for (int i = 0; i < 3; i++) {
-                    double currentAngle = angle + (i * 120);
-                    double radians = Math.toRadians(currentAngle);
-                    double x = Math.cos(radians) * 0.6;
-                    double z = Math.sin(radians) * 0.6;
-                    Location blockLoc = loc.clone().add(x, -1.5, z);
-                    orbitingBlocks[i].teleport(blockLoc);
-                }
-            }
-
-            private void spawnFireballParticles(Location loc) {
-                loc.getWorld().spawnParticle(Particle.FLAME, loc, 10, 0.3, 0.3, 0.3, 0.02);
-                loc.getWorld().spawnParticle(Particle.SMOKE, loc, 5, 0.2, 0.2, 0.2, 0.01);
-                loc.getWorld().spawnParticle(Particle.LAVA, loc, 2, 0.2, 0.2, 0.2);
-            }
-        }.runTaskTimer(plugin, 0, 1);
-    }
-
-    /**
-     * Sends a message to the player.
-     *
-     * @param player the player to receive the message
-     * @param message the message to send
-     */
-    private void sendMessage(Player player, Component message) {
-        player.sendMessage(message);
+            currentLoc.getWorld().spawnParticle(Particle.FLAME, currentLoc, 10, 0.3, 0.3, 0.3, 0.02);
+            currentLoc.getWorld().spawnParticle(Particle.SMOKE, currentLoc, 5, 0.2, 0.2, 0.2, 0.01);
+            currentLoc.getWorld().spawnParticle(Particle.LAVA, currentLoc, 2, 0.2, 0.2, 0.2);
+            counter[0]++;
+        }, 0, 1);
     }
 
     @Override

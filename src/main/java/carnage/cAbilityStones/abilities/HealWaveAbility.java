@@ -10,11 +10,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 
-/**
- * Implements the Heal Wave ability, healing the player and nearby allies with particle effects.
- */
 public class HealWaveAbility implements Ability {
     private static final double HEAL_AMOUNT = 4.0;
     private static final double RANGE = 5.0;
@@ -35,15 +31,10 @@ public class HealWaveAbility implements Ability {
         healPlayer(player);
         healNearbyAllies(player);
         startParticleEffect(player);
-        sendMessage(player, Component.text("Heal Wave activated!", NamedTextColor.AQUA));
+        player.sendMessage(Component.text("Heal Wave activated!", NamedTextColor.AQUA));
         return true;
     }
 
-    /**
-     * Heals the activating player.
-     *
-     * @param player the player to heal
-     */
     private void healPlayer(Player player) {
         double maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
         double newHealth = Math.min(player.getHealth() + HEAL_AMOUNT, maxHealth);
@@ -51,11 +42,6 @@ public class HealWaveAbility implements Ability {
         player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, REGEN_DURATION, REGEN_AMPLIFIER));
     }
 
-    /**
-     * Heals nearby allied players.
-     *
-     * @param player the activating player
-     */
     private void healNearbyAllies(Player player) {
         player.getNearbyEntities(RANGE, RANGE, RANGE).stream()
                 .filter(entity -> entity instanceof Player)
@@ -65,60 +51,36 @@ public class HealWaveAbility implements Ability {
                     double allyNewHealth = Math.min(ally.getHealth() + HEAL_AMOUNT, allyMaxHealth);
                     ally.setHealth(allyNewHealth);
                     ally.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, REGEN_DURATION, REGEN_AMPLIFIER));
-                    sendMessage(ally, Component.text(player.getName() + " healed you!", NamedTextColor.AQUA));
+                    ally.sendMessage(Component.text(player.getName() + " healed you!", NamedTextColor.AQUA));
                 });
     }
 
-    /**
-     * Starts the particle effect for the heal wave.
-     *
-     * @param player the player to show particles for
-     */
     private void startParticleEffect(Player player) {
-        new BukkitRunnable() {
-            double radius = 0;
-            int ticks = 0;
+        double[] radius = {0};
+        int[] ticks = {0};
+        Particle.DustOptions blueOpt = new Particle.DustOptions(Color.fromRGB(0, 191, 255), 1.5f);
+        Particle.DustOptions cyanOpt = new Particle.DustOptions(Color.fromRGB(0, 255, 255), 1.2f);
 
-            @Override
-            public void run() {
-                if (radius > MAX_RADIUS || ticks >= PARTICLE_TICKS) {
-                    cancel();
-                    return;
-                }
-
-                Location center = player.getLocation().clone().add(0, 0.1, 0);
-                spawnHealParticles(center, radius);
-                radius += 0.2;
-                ticks++;
+        plugin.getServer().getScheduler().runTaskTimer(plugin, task -> {
+            if (radius[0] > MAX_RADIUS || ticks[0] >= PARTICLE_TICKS) {
+                task.cancel();
+                return;
             }
 
-            private void spawnHealParticles(Location center, double radius) {
-                for (double angle = 0; angle < 360; angle += 5) {
-                    double radians = Math.toRadians(angle);
-                    double x = center.getX() + Math.cos(radians) * radius;
-                    double z = center.getZ() + Math.sin(radians) * radius;
-                    Location particleLoc = new Location(center.getWorld(), x, center.getY(), z);
-
-                    Particle.DustOptions blueOptions = new Particle.DustOptions(Color.fromRGB(0, 191, 255), 1.5f);
-                    player.getWorld().spawnParticle(Particle.DUST, particleLoc, 1, 0, 0, 0, 0, blueOptions);
-
-                    Particle.DustOptions cyanOptions = new Particle.DustOptions(Color.fromRGB(0, 255, 255), 1.2f);
-                    player.getWorld().spawnParticle(Particle.DUST, particleLoc, 1, 0, 0.05, 0, 0, cyanOptions);
-
-                    player.getWorld().spawnParticle(Particle.BUBBLE, particleLoc, 1, 0, 0.1, 0, 0);
-                }
+            Location center = player.getLocation().clone().add(0, 0.1, 0);
+            for (double angle = 0; angle < 360; angle += 5) {
+                double rad = Math.toRadians(angle);
+                double x = center.getX() + Math.cos(rad) * radius[0];
+                double z = center.getZ() + Math.sin(rad) * radius[0];
+                Location particleLoc = new Location(center.getWorld(), x, center.getY(), z);
+                player.getWorld().spawnParticle(Particle.DUST, particleLoc, 1, 0, 0, 0, 0, blueOpt);
+                player.getWorld().spawnParticle(Particle.DUST, particleLoc, 1, 0, 0.05, 0, 0, cyanOpt);
+                player.getWorld().spawnParticle(Particle.BUBBLE, particleLoc, 1, 0, 0.1, 0, 0);
             }
-        }.runTaskTimer(plugin, 0, 1);
-    }
 
-    /**
-     * Sends a message to the player.
-     *
-     * @param player the player to receive the message
-     * @param message the message to send
-     */
-    private void sendMessage(Player player, Component message) {
-        player.sendMessage(message);
+            radius[0] += 0.2;
+            ticks[0]++;
+        }, 0, 1);
     }
 
     @Override

@@ -13,12 +13,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-/**
- * Implements the Stone Shield ability, granting resistance and knocking back enemies with orbiting stone particles.
- */
 public class StoneShieldAbility implements Ability {
     private static final double KNOCKBACK_RANGE = 3.0;
     private static final double KNOCKBACK_FORCE = 0.8;
@@ -39,24 +35,14 @@ public class StoneShieldAbility implements Ability {
         applyResistance(player);
         knockbackNearbyEnemies(player);
         startParticleEffect(player);
-        sendMessage(player, Component.text("Stone Shield activated!", NamedTextColor.GREEN));
+        player.sendMessage(Component.text("Stone Shield activated!", NamedTextColor.GREEN));
         return true;
     }
 
-    /**
-     * Applies resistance effect to the player.
-     *
-     * @param player the player to receive the effect
-     */
     private void applyResistance(Player player) {
         player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, RESISTANCE_DURATION, RESISTANCE_AMPLIFIER));
     }
 
-    /**
-     * Knocks back nearby enemies.
-     *
-     * @param player the player activating the ability
-     */
     private void knockbackNearbyEnemies(Player player) {
         for (Entity entity : player.getNearbyEntities(KNOCKBACK_RANGE, KNOCKBACK_RANGE, KNOCKBACK_RANGE)) {
             if (entity instanceof LivingEntity && !(entity instanceof Player && entity.equals(player))) {
@@ -66,53 +52,32 @@ public class StoneShieldAbility implements Ability {
         }
     }
 
-    /**
-     * Starts the particle effect with orbiting stone heads.
-     *
-     * @param player the player to show particles for
-     */
     private void startParticleEffect(Player player) {
         ArmorStand[] stoneHeads = createStoneHeads(player.getLocation());
-        new BukkitRunnable() {
-            int ticks = 0;
-            double angle = 0;
+        double[] angle = {0};
+        int[] ticks = {0};
 
-            @Override
-            public void run() {
-                if (ticks >= PARTICLE_TICKS) {
-                    for (ArmorStand head : stoneHeads) {
-                        head.remove();
-                    }
-                    cancel();
-                    return;
-                }
-
-                Location playerLoc = player.getLocation().clone().add(0, 0.5, 0);
-                updateStoneHeadPositions(playerLoc, stoneHeads, angle);
-                angle += 5;
-                ticks++;
+        plugin.getServer().getScheduler().runTaskTimer(plugin, task -> {
+            if (ticks[0] >= PARTICLE_TICKS) {
+                for (ArmorStand head : stoneHeads) head.remove();
+                task.cancel();
+                return;
             }
 
-            private void updateStoneHeadPositions(Location playerLoc, ArmorStand[] stoneHeads, double angle) {
-                for (int i = 0; i < 3; i++) {
-                    double currentAngle = angle + (i * 120);
-                    double radians = Math.toRadians(currentAngle);
-                    double x = Math.cos(radians) * 1.5;
-                    double z = Math.sin(radians) * 1.5;
-                    Location headLoc = playerLoc.clone().add(x, 0, z);
-                    headLoc.setYaw((float) currentAngle);
-                    stoneHeads[i].teleport(headLoc);
-                }
+            Location playerLoc = player.getLocation().clone().add(0, 0.5, 0);
+            for (int i = 0; i < 3; i++) {
+                double curAngle = angle[0] + (i * 120);
+                double rad = Math.toRadians(curAngle);
+                Location headLoc = playerLoc.clone().add(Math.cos(rad) * 1.5, 0, Math.sin(rad) * 1.5);
+                headLoc.setYaw((float) curAngle);
+                stoneHeads[i].teleport(headLoc);
             }
-        }.runTaskTimer(plugin, 0, 1);
+
+            angle[0] += 5;
+            ticks[0]++;
+        }, 0, 1);
     }
 
-    /**
-     * Creates armor stands with stone helmets for the particle effect.
-     *
-     * @param location the starting location
-     * @return array of armor stands
-     */
     private ArmorStand[] createStoneHeads(Location location) {
         ArmorStand[] stoneHeads = new ArmorStand[3];
         for (int i = 0; i < 3; i++) {
@@ -126,16 +91,6 @@ public class StoneShieldAbility implements Ability {
             stoneHeads[i] = head;
         }
         return stoneHeads;
-    }
-
-    /**
-     * Sends a message to the player.
-     *
-     * @param player the player to receive the message
-     * @param message the message to send
-     */
-    private void sendMessage(Player player, Component message) {
-        player.sendMessage(message);
     }
 
     @Override

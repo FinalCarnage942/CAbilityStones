@@ -10,9 +10,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Implements the Chain Lightning ability, striking up to three nearby enemies with lightning.
- */
 public class ChainLightningAbility implements Ability {
     private static final double RANGE = 6.0;
     private static final long DEFAULT_COOLDOWN = 12_000L;
@@ -28,21 +25,15 @@ public class ChainLightningAbility implements Ability {
     public boolean activate(Player player) {
         List<LivingEntity> targets = findNearbyEnemies(player);
         if (targets.isEmpty()) {
-            sendMessage(player, Component.text("No enemies nearby!", NamedTextColor.RED));
+            player.sendMessage(Component.text("No enemies nearby!", NamedTextColor.RED));
             return false;
         }
 
         applyLightningEffect(player, targets);
-        sendMessage(player, Component.text("Chain Lightning struck " + targets.size() + " enemies!", NamedTextColor.YELLOW));
+        player.sendMessage(Component.text("Chain Lightning struck " + targets.size() + " enemies!", NamedTextColor.YELLOW));
         return true;
     }
 
-    /**
-     * Finds up to three nearby enemies within the specified range, excluding the player.
-     *
-     * @param player the player activating the ability
-     * @return list of up to three nearby enemies
-     */
     private List<LivingEntity> findNearbyEnemies(Player player) {
         return player.getNearbyEntities(RANGE, RANGE, RANGE).stream()
                 .filter(entity -> entity instanceof LivingEntity)
@@ -53,27 +44,11 @@ public class ChainLightningAbility implements Ability {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Applies lightning effect and damage to the target entities.
-     *
-     * @param player the player causing the damage
-     * @param targets the list of target entities
-     */
     private void applyLightningEffect(Player player, List<LivingEntity> targets) {
         for (LivingEntity enemy : targets) {
             enemy.getWorld().strikeLightningEffect(enemy.getLocation());
             enemy.damage(DAMAGE, player);
         }
-    }
-
-    /**
-     * Sends a message to the player.
-     *
-     * @param player the player to receive the message
-     * @param message the message to send
-     */
-    private void sendMessage(Player player, Component message) {
-        player.sendMessage(message);
     }
 
     @Override

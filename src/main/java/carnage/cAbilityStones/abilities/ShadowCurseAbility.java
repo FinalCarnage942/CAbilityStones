@@ -11,11 +11,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 
-/**
- * Implements the Shadow Curse ability, applying debuffs to nearby enemies with particle effects.
- */
 public class ShadowCurseAbility implements Ability {
     private static final double RANGE = 4.0;
     private static final int EFFECT_DURATION = 60;
@@ -33,21 +29,15 @@ public class ShadowCurseAbility implements Ability {
     public boolean activate(Player player) {
         int affected = applyDebuffs(player);
         if (affected == 0) {
-            sendMessage(player, Component.text("No enemies nearby!", NamedTextColor.RED));
+            player.sendMessage(Component.text("No enemies nearby!", NamedTextColor.RED));
             return false;
         }
 
         startParticleEffect(player);
-        sendMessage(player, Component.text("Shadow Curse affected " + affected + " enemies!", NamedTextColor.DARK_PURPLE));
+        player.sendMessage(Component.text("Shadow Curse affected " + affected + " enemies!", NamedTextColor.DARK_PURPLE));
         return true;
     }
 
-    /**
-     * Applies blindness and slowness debuffs to nearby enemies.
-     *
-     * @param player the player activating the ability
-     * @return the number of affected enemies
-     */
     private int applyDebuffs(Player player) {
         int affected = 0;
         for (Entity entity : player.getNearbyEntities(RANGE, RANGE, RANGE)) {
@@ -61,58 +51,34 @@ public class ShadowCurseAbility implements Ability {
         return affected;
     }
 
-    /**
-     * Starts the particle effect for the shadow curse.
-     *
-     * @param player the player to show particles for
-     */
     private void startParticleEffect(Player player) {
-        new BukkitRunnable() {
-            int ticks = 0;
+        int[] ticks = {0};
+        Particle.DustOptions purpleOpt = new Particle.DustOptions(Color.fromRGB(75, 0, 130), 1.5f);
+        Particle.DustOptions darkOpt = new Particle.DustOptions(Color.fromRGB(50, 50, 50), 1.2f);
 
-            @Override
-            public void run() {
-                if (ticks >= PARTICLE_TICKS) {
-                    cancel();
-                    return;
-                }
-
-                Location center = player.getLocation().clone().add(0, 3, 0);
-                spawnCurseParticles(center);
-                ticks++;
+        plugin.getServer().getScheduler().runTaskTimer(plugin, task -> {
+            if (ticks[0] >= PARTICLE_TICKS) {
+                task.cancel();
+                return;
             }
 
-            private void spawnCurseParticles(Location center) {
-                for (int i = 0; i < 8; i++) {
-                    double angle = Math.random() * Math.PI * 2;
-                    double radius = Math.random() * 4;
-                    double x = center.getX() + Math.cos(angle) * radius;
-                    double z = center.getZ() + Math.sin(angle) * radius;
-                    Location spikeLoc = new Location(center.getWorld(), x, center.getY(), z);
+            Location center = player.getLocation().clone().add(0, 3, 0);
+            for (int i = 0; i < 8; i++) {
+                double angle = Math.random() * Math.PI * 2;
+                double radius = Math.random() * 4;
+                Location spikeLoc = new Location(center.getWorld(),
+                    center.getX() + Math.cos(angle) * radius, center.getY(),
+                    center.getZ() + Math.sin(angle) * radius);
 
-                    for (double y = 0; y < 3; y += 0.2) {
-                        Location particleLoc = spikeLoc.clone().subtract(0, y, 0);
-                        Particle.DustOptions dustOptions = new Particle.DustOptions(Color.fromRGB(75, 0, 130), 1.5f);
-                        player.getWorld().spawnParticle(Particle.DUST, particleLoc, 1, 0, 0, 0, 0, dustOptions);
-
-                        if (Math.random() > 0.5) {
-                            Particle.DustOptions darkDustOptions = new Particle.DustOptions(Color.fromRGB(50, 50, 50), 1.2f);
-                            player.getWorld().spawnParticle(Particle.DUST, particleLoc, 1, 0.05, 0, 0.05, 0, darkDustOptions);
-                        }
-                    }
+                for (double y = 0; y < 3; y += 0.2) {
+                    Location particleLoc = spikeLoc.clone().subtract(0, y, 0);
+                    player.getWorld().spawnParticle(Particle.DUST, particleLoc, 1, 0, 0, 0, 0, purpleOpt);
+                    if (Math.random() > 0.5)
+                        player.getWorld().spawnParticle(Particle.DUST, particleLoc, 1, 0.05, 0, 0.05, 0, darkOpt);
                 }
             }
-        }.runTaskTimer(plugin, 0, 2);
-    }
-
-    /**
-     * Sends a message to the player.
-     *
-     * @param player the player to receive the message
-     * @param message the message to send
-     */
-    private void sendMessage(Player player, Component message) {
-        player.sendMessage(message);
+            ticks[0]++;
+        }, 0, 2);
     }
 
     @Override
